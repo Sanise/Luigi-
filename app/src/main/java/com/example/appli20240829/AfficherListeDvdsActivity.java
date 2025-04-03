@@ -9,6 +9,8 @@ import android.view.View;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 
+import android.widget.Button;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 import org.json.JSONArray;
@@ -33,6 +35,12 @@ public class AfficherListeDvdsActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_afficherlistedvds);
+
+        Button btnNavigate = findViewById(R.id.btnNavigate);
+        btnNavigate.setOnClickListener(v -> {
+            Intent intent = new Intent(AfficherListeDvdsActivity.this, PanierActivity.class);
+            startActivity(intent);
+        });
 
         // Définition des colonnes pour stocker les films
         String[] columns = new String[]{"_id", "title", "releaseYear", "disponibilite"};
@@ -71,7 +79,7 @@ public class AfficherListeDvdsActivity extends AppCompatActivity {
         });
 
         // Récupérer les données de disponibilité avant de récupérer la liste des films
-        new AppelerServiceRestGETDisponibilite().execute("http://10.0.2.2:8080/toad/inventory/stockFilm");
+        new AppelerServiceRestGETDisponibilite().execute(com.btssio.applicationrftg.DonneesPartagees.getURLConnexion() + "/toad/inventory/stockFilm");
     }
 
     /**

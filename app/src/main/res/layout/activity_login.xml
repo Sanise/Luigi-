@@ -1,10 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="20dp"
     android:gravity="center">
+
+    <TextView
+        android:id="@+id/URLConnexionText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:backgroundTint="#FE0500"
+        android:text="URL de connexion" />
+    <Spinner
+        android:id="@+id/spinnerURLs"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:backgroundTint="#FE0500" />
 
     <EditText
         android:id="@+id/etEmail"
@@ -20,6 +33,14 @@
         android:hint="Mot de passe"
         android:inputType="textPassword"
         android:layout_marginTop="10dp" />
+
+    <EditText
+        android:id="@+id/editTextURL"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="URL"
+        android:inputType="text"
+        tools:ignore="TextFields" />
 
     <Button
         android:id="@+id/btnLogin"

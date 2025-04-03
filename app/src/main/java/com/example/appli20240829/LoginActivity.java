@@ -1,93 +1,152 @@
 package com.example.appli20240829;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.Volley;
-
-import org.json.JSONException;
 import org.json.JSONObject;
 
-public class LoginActivity extends AppCompatActivity {
+import java.io.IOException;
 
-    private EditText etEmail, etPassword;
-    private Button btnLogin;
-    private RequestQueue requestQueue;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
+public class LoginActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
+
+    private EditText editTextEmail, editTextPassword, editTextUrl;
+    private Button buttonLogin;
+    private Spinner spinnerURLs;
+    private OkHttpClient client = new OkHttpClient();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        etEmail = findViewById(R.id.etEmail);
-        etPassword = findViewById(R.id.etPassword);
-        btnLogin = findViewById(R.id.btnLogin);
+        editTextEmail = findViewById(R.id.etEmail);
+        editTextPassword = findViewById(R.id.etPassword);
+        buttonLogin = findViewById(R.id.btnLogin);
+        editTextUrl = findViewById(R.id.editTextURL);
+        spinnerURLs = findViewById(R.id.spinnerURLs);
 
-        requestQueue = Volley.newRequestQueue(this);
+        String[] listeURLs = getResources().getStringArray(R.array.listeURLs);
+        ArrayAdapter<CharSequence> adapterListeURLs = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, listeURLs);
+        adapterListeURLs.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerURLs.setAdapter(adapterListeURLs);
+        spinnerURLs.setOnItemSelectedListener(this);
 
-        btnLogin.setOnClickListener(new View.OnClickListener() {
+        buttonLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String email = etEmail.getText().toString().trim();
-                String password = etPassword.getText().toString().trim();
+                String email = editTextEmail.getText().toString().trim();
+                String password = editTextPassword.getText().toString().trim();
+                String urlConnexion = com.btssio.applicationrftg.DonneesPartagees.getURLConnexion();
 
-                if (email.isEmpty() || password.isEmpty()) {
-                    Toast.makeText(LoginActivity.this, "Veuillez remplir tous les champs", Toast.LENGTH_SHORT).show();
+                if (!editTextUrl.getText().toString().isEmpty()) {
+                    urlConnexion = editTextUrl.getText().toString().trim();
+                }
+
+                if (!email.isEmpty() && !password.isEmpty()) {
+                    fetchCustomerByEmail(email, password, urlConnexion);
                 } else {
-                    verifierUtilisateur(email, password);
+                    Toast.makeText(LoginActivity.this, "Veuillez remplir tous les champs", Toast.LENGTH_SHORT).show();
                 }
             }
         });
     }
 
-    private void verifierUtilisateur(String email, String password) {
-        String url = "http://10.0.2.2:8080/toad/customer/getByEmail?email=" + email;
+    private void fetchCustomerByEmail(String email, String password, String urlConnexion) {
+        String url = urlConnexion + "/toad/customer/getByEmail?email=" + email;
 
-        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        try {
-                            int customerId = response.getInt("customerId");
-                            String passwordBDD = response.getString("password");
+        Request request = new Request.Builder()
+                .url(url)
+                .get()
+                .build();
 
-                            if (password.equals(passwordBDD)) {
-                                Toast.makeText(LoginActivity.this, "Connexion réussie !", Toast.LENGTH_SHORT).show();
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                runOnUiThread(() ->
+                        Toast.makeText(LoginActivity.this, "Erreur de connexion", Toast.LENGTH_SHORT).show());
+                Log.e("LoginActivity", "Échec de la connexion : ", e);
+            }
 
-                                // Redirection avec l'ID du client
-                                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                                intent.putExtra("CUSTOMER_ID", customerId);
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    try {
+                        String responseBody = response.body().string();
+                        Log.d("LoginActivity", "Réponse du serveur : " + responseBody);
+
+                        // Correction : Vérification si la réponse est vide avant de l'analyser
+                        if (responseBody == null || responseBody.isEmpty()) {
+                            runOnUiThread(() ->
+                                    Toast.makeText(LoginActivity.this, "Utilisateur non trouvé", Toast.LENGTH_SHORT).show());
+                            return;
+                        }
+
+                        JSONObject jsonObject = new JSONObject(responseBody);
+
+                        // VERIFICATION DE L'EMAIL ET DU PASSWORD
+                        if (jsonObject.has("password") && jsonObject.getString("password").equals(password)) {
+                            int userId = jsonObject.getInt("customerId");
+                            runOnUiThread(() -> {
+                                Toast.makeText(LoginActivity.this, "Connexion réussie", Toast.LENGTH_SHORT).show();
+
+                                // STOCKAGE DE l'ID DE L'UTILISATEUR
+                                SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+                                SharedPreferences.Editor editor = sharedPreferences.edit();
+                                editor.putInt("customerId", userId);
+                                editor.apply();
+
+                                // REDIRIGE VERS LA LISTE DES FILMS
+                                Intent intent = new Intent(LoginActivity.this, AfficherListeDvdsActivity.class);
+                                intent.putExtra("USER_ID", userId);
                                 startActivity(intent);
                                 finish();
-                            } else {
-                                Toast.makeText(LoginActivity.this, "Mot de passe incorrect", Toast.LENGTH_SHORT).show();
-                            }
-                        } catch (JSONException e) {
-                            Log.e("LOGIN", "Erreur JSON : " + e.getMessage());
-                            Toast.makeText(LoginActivity.this, "Erreur de connexion", Toast.LENGTH_SHORT).show();
+                            });
+                        } else {
+                            runOnUiThread(() ->
+                                    Toast.makeText(LoginActivity.this, "Mot de passe incorrect", Toast.LENGTH_SHORT).show());
                         }
+                    } catch (Exception e) {
+                        Log.e("LoginActivity", "Erreur lors du traitement des données", e);
+                        runOnUiThread(() ->
+                                Toast.makeText(LoginActivity.this, "Erreur lors du traitement des données", Toast.LENGTH_SHORT).show());
                     }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        Log.e("LOGIN", "Erreur Volley : " + error.toString());
-                        Toast.makeText(LoginActivity.this, "Utilisateur introuvable", Toast.LENGTH_SHORT).show();
-                    }
-                });
+                } else {
+                    runOnUiThread(() ->
+                            Toast.makeText(LoginActivity.this, "Erreur serveur", Toast.LENGTH_SHORT).show());
+                    Log.e("LoginActivity", "Erreur serveur : " + response.code());
+                }
+            }
+        });
+    }
 
-        requestQueue.add(request);
+    @Override
+    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+        // Correction de l'URL
+        String selectedURL = parent.getItemAtPosition(position).toString();
+        com.btssio.applicationrftg.DonneesPartagees.setURLConnexion(selectedURL);
+        editTextUrl.setText(selectedURL);
+        Toast.makeText(getApplicationContext(), "URL sélectionnée : " + selectedURL, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onNothingSelected(AdapterView<?> parent) {
+        // Ne rien faire
     }
 }
