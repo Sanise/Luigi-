@@ -13,5 +13,3 @@ public class DonneesPartagees {
         return URLConnexion;
     }
 }
-
-

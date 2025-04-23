@@ -24,20 +24,25 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
+
+// Activité affichant la liste des films (DVDs)
 public class AfficherListeDvdsActivity extends AppCompatActivity {
 
-    private SimpleCursorAdapter adapter;
-    private MatrixCursor dvdCursor;
-    private Map<String, String> disponibiliteMap = new HashMap<>();
-    private Map<Integer, JSONObject> filmDetailsMap = new HashMap<>();
+    private SimpleCursorAdapter adapter; // Adapter pour remplir la ListView avec les données des films
+    private MatrixCursor dvdCursor; // Curseur temporaire contenant les films affichés
+    private Map<String, String> disponibiliteMap = new HashMap<>(); // Map associant un titre à sa disponibilité
+
+    private Map<Integer, JSONObject> filmDetailsMap = new HashMap<>(); // Map associant un ID à l’objet JSON complet du film
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_afficherlistedvds);
+        setContentView(R.layout.activity_afficherlistedvds); // Lie l’activité au layout XML
 
+        // Initialisation du bouton "Panier"
         Button btnNavigate = findViewById(R.id.btnNavigate);
         btnNavigate.setOnClickListener(v -> {
+            // Lors du clic, passage à l’activité PanierActivity
             Intent intent = new Intent(AfficherListeDvdsActivity.this, PanierActivity.class);
             startActivity(intent);
         });
@@ -46,23 +51,28 @@ public class AfficherListeDvdsActivity extends AppCompatActivity {
         String[] columns = new String[]{"_id", "title", "releaseYear", "disponibilite"};
         dvdCursor = new MatrixCursor(columns);
 
+        // Associer les colonnes aux éléments visuels du layout item (activité liste items dvds)
         String[] from = new String[]{"title", "releaseYear", "disponibilite"};
         int[] to = new int[]{R.id.filmName, R.id.filmDate, R.id.filmDisponibilite};
 
+        // Création de l’adapter qui affichera les films dans la ListView
         adapter = new SimpleCursorAdapter(this, R.layout.activity_afficherlisteitemsdvds, dvdCursor, from, to, 0);
 
+        // Initialisation de la ListView
         ListView listViewDvds = findViewById(R.id.listView);
-        listViewDvds.setAdapter(adapter);
-        listViewDvds.setTextFilterEnabled(true);
+        listViewDvds.setAdapter(adapter); // Liaison avec l’adapter
+        listViewDvds.setTextFilterEnabled(true); // Active le filtre texte (optionnel ici)
 
-        // Gestion du clic sur un film
+        // Gestion du clic sur un film de la liste
         listViewDvds.setOnItemClickListener((parent, view, position, id) -> {
-            dvdCursor.moveToPosition(position);
-            int filmId = dvdCursor.getInt(dvdCursor.getColumnIndex("_id"));
+            dvdCursor.moveToPosition(position); // Aller à la position cliquée
+            int filmId = dvdCursor.getInt(dvdCursor.getColumnIndex("_id")); // Récupérer l’ID du film
 
+            // Récupérer les détails complets du film
             JSONObject filmJson = filmDetailsMap.get(filmId);
             if (filmJson != null) {
                 try {
+                    // Créer un Intent avec les infos du film pour FilmDetailsActivity
                     Intent intent = new Intent(AfficherListeDvdsActivity.this, FilmDetailsActivity.class);
                     intent.putExtra("filmId", filmId);
                     intent.putExtra("filmTitle", filmJson.getString("title"));
@@ -78,13 +88,11 @@ public class AfficherListeDvdsActivity extends AppCompatActivity {
             }
         });
 
-        // Récupérer les données de disponibilité avant de récupérer la liste des films
+        // lancer l'appel API, Récupérer les données de disponibilité avant de récupérer la liste des films
         new AppelerServiceRestGETDisponibilite().execute(com.btssio.applicationrftg.DonneesPartagees.getURLConnexion() + "/toad/inventory/stockFilm");
     }
 
-    /**
-     * Récupère la disponibilité des films
-     */
+// Classe interne qui appelle le service REST pour récupérer la disponibilité des films
     private class AppelerServiceRestGETDisponibilite extends AsyncTask<String, Void, JSONArray> {
 
         @Override
@@ -93,10 +101,12 @@ public class AfficherListeDvdsActivity extends AppCompatActivity {
             StringBuilder result = new StringBuilder();
 
             try {
+                // Connexion HTTP GET
                 URL url = new URL(urlString);
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("GET");
 
+                // Lire la réponse JSON ligne par ligne
                 BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
                 String line;
                 while ((line = reader.readLine()) != null) {
@@ -104,6 +114,7 @@ public class AfficherListeDvdsActivity extends AppCompatActivity {
                 }
                 reader.close();
 
+                // Convertir le résultat texte en tableau JSON
                 return new JSONArray(result.toString());
 
             } catch (Exception e) {
@@ -112,6 +123,7 @@ public class AfficherListeDvdsActivity extends AppCompatActivity {
             }
         }
 
+    // Exécuté après la récupération des données
         @Override
         protected void onPostExecute(JSONArray filmsDispo) {
             if (filmsDispo == null) {
@@ -120,11 +132,13 @@ public class AfficherListeDvdsActivity extends AppCompatActivity {
             }
 
             try {
+                // Parcours de chaque film pour lire le titre et le nombre dispo
                 for (int i = 0; i < filmsDispo.length(); i++) {
                     JSONObject film = filmsDispo.getJSONObject(i);
                     String title = film.getString("title");
                     int filmsDisponibles = film.getInt("filmsDisponibles");
 
+                    // Si > 0 : disponible, sinon : indisponible
                     String disponibilite = (filmsDisponibles > 0) ? "Disponible" : "Indisponible";
                     disponibiliteMap.put(title, disponibilite);
                 }
@@ -138,11 +152,10 @@ public class AfficherListeDvdsActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * Récupère la liste des films
-     */
+    // Classe interne qui appelle le service REST pour afficher la liste complète des DVDs
     private class AppelerServiceRestGETAfficherListeDvdsTask extends AsyncTask<String, Void, JSONArray> {
 
+        //récupération des films
         @Override
         protected JSONArray doInBackground(String... urls) {
             String urlString = urls[0];
@@ -168,6 +181,7 @@ public class AfficherListeDvdsActivity extends AppCompatActivity {
             }
         }
 
+        // Une fois les films récupérés, on les affiche dans le curseur
         @Override
         protected void onPostExecute(JSONArray films) {
             if (films == null) {
@@ -176,6 +190,7 @@ public class AfficherListeDvdsActivity extends AppCompatActivity {
             }
 
             try {
+                // Réinitialisation du curseur
                 dvdCursor.close();
                 dvdCursor = new MatrixCursor(new String[]{"_id", "title", "releaseYear", "disponibilite"});
 
@@ -185,15 +200,17 @@ public class AfficherListeDvdsActivity extends AppCompatActivity {
                     String title = film.getString("title");
                     String releaseYear = film.optString("releaseYear", "Non disponible");
 
-                    // Stocker les détails du film
+                    // Stocker (sauvgarder) les détails du film
                     filmDetailsMap.put(filmId, film);
 
-                    // Récupérer la disponibilité
+                    // Récupérer la disponibilité (On lit la disponibilité depuis la map créée juste avant)
                     String disponibilite = disponibiliteMap.getOrDefault(title, "Indisponible");
 
+                    // Ajout d’une ligne dans le curseur
                     dvdCursor.addRow(new Object[]{filmId, title, releaseYear, disponibilite});
                 }
 
+                // Rafraîchir l’adaptateur avec le nouveau curseur
                 adapter.changeCursor(dvdCursor);
 
             } catch (JSONException e) {

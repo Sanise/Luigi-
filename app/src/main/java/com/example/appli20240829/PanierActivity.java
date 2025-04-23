@@ -24,31 +24,35 @@ import java.util.Locale;
 
 public class PanierActivity extends AppCompatActivity {
 
-    private ListView cartListView;
-    private Button btnValidateOrder, btnContinueBrowsing;
-    private ArrayAdapter<String> cartAdapter;
-    private ArrayList<String> cartItems;
-    private int customerId;
+    private ListView cartListView;  // Vue de la liste du panier
+    private Button btnValidateOrder, btnContinueBrowsing; // Boutons de validation et retour
+    private ArrayAdapter<String> cartAdapter; // Adaptateur pour afficher les titres des films
+    private ArrayList<String> cartItems; // Liste des entrées du panier (ex : "12|Matrix")
+    private int customerId; // ID du client connecté
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_panier);
+        setContentView(R.layout.activity_panier); // Liaison avec le layout XML
 
-        // 🔐 Récupérer l'ID du client connecté
+        // Récupérer l'ID du client connecté depuis les préférences
         SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         customerId = sharedPreferences.getInt("customerId", -1);
 
+
+        // Si aucun ID trouvé, on quitte l’activité
         if (customerId == -1) {
             Toast.makeText(this, "Erreur : ID client introuvable. Veuillez vous reconnecter.", Toast.LENGTH_LONG).show();
             finish();
             return;
         }
 
+        // Liaison des vues XML
         cartListView = findViewById(R.id.cart_list_view);
         btnValidateOrder = findViewById(R.id.btn_validate_order);
         btnContinueBrowsing = findViewById(R.id.btn_continue_browsing);
 
+        // Récupération du contenu du panier
         cartItems = PanierManager.getCart(this);
         if (cartItems == null) {
             cartItems = new ArrayList<>();
@@ -56,25 +60,28 @@ public class PanierActivity extends AppCompatActivity {
 
         Log.d("PANIER", "Films récupérés : " + cartItems.toString());
 
+        // Message si le panier est vide
         if (cartItems.isEmpty()) {
             Toast.makeText(this, "Votre panier est vide.", Toast.LENGTH_SHORT).show();
         }
 
-        // 💬 Afficher uniquement les titres dans la ListView
+        // Afficher dans la liste uniquement les titres (dans la ListView)
         ArrayList<String> displayItems = new ArrayList<>();
         for (String item : cartItems) {
             String[] parts = item.split("\\|");
             displayItems.add(parts.length > 1 ? parts[1] : item);
         }
 
+        // Adaptateur pour afficher les titres dans la ListView
         cartAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, displayItems);
         cartListView.setAdapter(cartAdapter);
 
-        // ❌ Suppression d'un film sur appui long
+        //  Suppression d'un film sur appui long
         cartListView.setOnItemLongClickListener((parent, view, position, id) -> {
-            String titleClicked = cartAdapter.getItem(position);
-            String fullEntry = null;
+            String titleClicked = cartAdapter.getItem(position); // Titre affiché
+            String fullEntry = null; // Entrée complète avec inventory_id
 
+            // On retrouve l’entrée complète associée au titre
             for (String item : cartItems) {
                 String[] parts = item.split("\\|");
                 if (parts.length > 1 && parts[1].equals(titleClicked)) {
@@ -83,12 +90,13 @@ public class PanierActivity extends AppCompatActivity {
                 }
             }
 
+            // Si trouvée → suppression du panier
             if (fullEntry != null) {
                 PanierManager.removeFromCart(this, fullEntry);
                 cartItems.remove(fullEntry);
                 Toast.makeText(this, titleClicked + " supprimé du panier", Toast.LENGTH_SHORT).show();
 
-                // Mettre à jour l'affichage
+                // Mise à jour de l'affichage
                 ArrayList<String> updatedDisplayItems = new ArrayList<>();
                 for (String item : cartItems) {
                     String[] parts = item.split("\\|");
@@ -103,43 +111,44 @@ public class PanierActivity extends AppCompatActivity {
             return true;
         });
 
-        // ✅ Valider la commande
+        // bouton de la validation la commande
         btnValidateOrder.setOnClickListener(v -> {
             if (!cartItems.isEmpty()) {
-                envoyerPanierAuServeur();
+                envoyerPanierAuServeur(); // Envoie les locations au serveur
             }
         });
 
-        // ↩️ Retour à la liste des DVDs
+        // bouton de retour à la liste des DVDs
         btnContinueBrowsing.setOnClickListener(v -> {
             Intent intent = new Intent(PanierActivity.this, AfficherListeDvdsActivity.class);
             startActivity(intent);
-            finish();
+            finish(); // Ferme PanierActivity pour éviter empilement
         });
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        // Rafraîchir les données du panier
         cartItems.clear();
         cartItems.addAll(PanierManager.getCart(this));
         cartAdapter.notifyDataSetChanged();
     }
 
-    // 📤 Envoi de chaque film au serveur
+    // Envoie chaque film du panier au serveur pour location
     private void envoyerPanierAuServeur() {
         for (String entry : cartItems) {
             String[] parts = entry.split("\\|");
             if (parts.length >= 2) {
-                int inventoryId = Integer.parseInt(parts[0]);
-                envoyerLocation(inventoryId);
+                int inventoryId = Integer.parseInt(parts[0]); // On récupère le inventory_id
+                envoyerLocation(inventoryId); // Appel à l’API /rental/add
             } else {
                 Toast.makeText(this, "Entrée invalide : " + entry, Toast.LENGTH_SHORT).show();
             }
         }
     }
 
-    // 📨 Envoi d'une location
+    // Envoie d’une seule location (un film)
     private void envoyerLocation(int inventoryId) {
         new AsyncTask<Void, Void, Boolean>() {
             @Override
@@ -151,9 +160,10 @@ public class PanierActivity extends AppCompatActivity {
                     connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
                     connection.setDoOutput(true);
 
-                    String rentalDateTime = getCurrentDateTime();
-                    String returnDate = getReturnDate(rentalDateTime);
+                    String rentalDateTime = getCurrentDateTime(); // Date actuelle
+                    String returnDate = getReturnDate(rentalDateTime); // Date de retour (+7j)
 
+                    // Corps de la requête POST
                     String params = "rental_date=" + rentalDateTime +
                             "&inventory_id=" + inventoryId +
                             "&customer_id=" + customerId +
@@ -161,12 +171,13 @@ public class PanierActivity extends AppCompatActivity {
                             "&staff_id=1" +
                             "&last_update=" + rentalDateTime;
 
+                    // Envoi des données dans le corps de la requête
                     try (OutputStream os = connection.getOutputStream()) {
                         os.write(params.getBytes());
                         os.flush();
                     }
 
-                    int responseCode = connection.getResponseCode();
+                    int responseCode = connection.getResponseCode(); // Code HTTP
                     return responseCode == 200;
 
                 } catch (Exception e) {
@@ -178,7 +189,8 @@ public class PanierActivity extends AppCompatActivity {
             @Override
             protected void onPostExecute(Boolean success) {
                 if (success) {
-                    PanierManager.clearCart(PanierActivity.this);
+                    // Si la commande est bien enregistrée
+                    PanierManager.clearCart(PanierActivity.this); // Vide le panier
                     cartItems.clear();
                     cartAdapter.clear();
                     cartAdapter.notifyDataSetChanged();
@@ -191,16 +203,18 @@ public class PanierActivity extends AppCompatActivity {
         }.execute();
     }
 
+    // Récupère la date et l’heure actuelles au format "yyyy-MM-dd HH:mm:ss"
     private String getCurrentDateTime() {
         return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
     }
 
+    // Calcule la date de retour en ajoutant 7 jours à la date de location
     private String getReturnDate(String rentalDate) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
         try {
             Date date = sdf.parse(rentalDate);
             assert date != null;
-            date.setTime(date.getTime() + (7L * 24 * 60 * 60 * 1000)); // +7 jours
+            date.setTime(date.getTime() + (7L * 24 * 60 * 60 * 1000)); // // Ajoute 7 jours
             return sdf.format(date);
         } catch (Exception e) {
             Log.e("PANIER", "Erreur lors du calcul de la return_date", e);

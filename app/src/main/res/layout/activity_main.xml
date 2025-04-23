@@ -5,7 +5,8 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context=".MainActivity">
-    <!-- Nouveau bouton ajouté à la fin -->
+
+    <!-- Bouton pour accéder à la liste des DVDs -->
     <Button
         android:id="@+id/button_afficher_dvds"
         android:layout_width="wrap_content"

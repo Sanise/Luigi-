@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     tools:context=".FilmDetailsActivity">
 
-    <!-- Titre -->
+    <!-- Titre du film -->
     <TextView
         android:id="@+id/movie_title"
         android:layout_width="wrap_content"
@@ -20,7 +20,7 @@
         app:layout_constraintStart_toStartOf="parent"
         android:layout_marginStart="16dp"/>
 
-    <!-- Description -->
+    <!-- Description du film -->
     <TextView
         android:id="@+id/movie_description"
         android:layout_width="wrap_content"
@@ -32,7 +32,7 @@
         app:layout_constraintStart_toStartOf="parent"
         android:layout_marginStart="16dp"/>
 
-    <!-- Année de sortie -->
+    <!-- Année de sortie du film-->
     <TextView
         android:id="@+id/movie_release_year"
         android:layout_width="wrap_content"
@@ -44,7 +44,7 @@
         app:layout_constraintStart_toStartOf="parent"
         android:layout_marginStart="16dp"/>
 
-    <!-- Classification -->
+    <!-- Classification du film ( ex: pg-13)-->
     <TextView
         android:id="@+id/movie_rating"
         android:layout_width="wrap_content"
@@ -56,7 +56,7 @@
         app:layout_constraintStart_toStartOf="parent"
         android:layout_marginStart="16dp"/>
 
-    <!-- Fonctionnalités spéciales -->
+    <!-- Fonctionnalités spéciales (ex bande d'annonce, commentaire du réalisateur)  -->
     <TextView
         android:id="@+id/movie_special_features"
         android:layout_width="wrap_content"
@@ -68,7 +68,7 @@
         app:layout_constraintStart_toStartOf="parent"
         android:layout_marginStart="16dp"/>
 
-    <!-- Bouton Ajouter au panier -->
+    <!-- Bouton pour ajouter le film au panier -->
     <Button
         android:id="@+id/btnAddToCart"
         android:layout_width="wrap_content"

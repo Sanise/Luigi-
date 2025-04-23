@@ -7,18 +7,22 @@
     android:padding="20dp"
     android:gravity="center">
 
+    <!-- Étiquette "URL de connexion" -->
     <TextView
         android:id="@+id/URLConnexionText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:backgroundTint="#FE0500"
         android:text="URL de connexion" />
+
+    <!-- Liste déroulante des URLs prédéfinies -->
     <Spinner
         android:id="@+id/spinnerURLs"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:backgroundTint="#FE0500" />
 
+    <!-- Champ de saisie pour l'adresse email -->
     <EditText
         android:id="@+id/etEmail"
         android:layout_width="match_parent"
@@ -26,6 +30,7 @@
         android:hint="Email"
         android:inputType="textEmailAddress" />
 
+    <!-- Champ de saisie du mot de passe -->
     <EditText
         android:id="@+id/etPassword"
         android:layout_width="match_parent"
@@ -34,6 +39,7 @@
         android:inputType="textPassword"
         android:layout_marginTop="10dp" />
 
+    <!-- Champ pour saisir manuellement une URL -->
     <EditText
         android:id="@+id/editTextURL"
         android:layout_width="match_parent"
@@ -42,6 +48,7 @@
         android:inputType="text"
         tools:ignore="TextFields" />
 
+    <!-- Bouton pour valider la connexion -->
     <Button
         android:id="@+id/btnLogin"
         android:layout_width="match_parent"

@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:padding="16dp">
 
-    <!-- Liste des films dans le panier -->
+    <!-- Liste des films ajouter au panier -->
     <ListView
         android:id="@+id/cart_list_view"
         android:layout_width="match_parent"
@@ -18,7 +18,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-    <!-- Bouton Valider le panier -->
+    <!-- Bouton pour valider le panier (envoyer les locations) -->
     <Button
         android:id="@+id/btn_validate_order"
         android:layout_width="wrap_content"
@@ -29,7 +29,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-    <!-- Bouton Poursuivre la recherche -->
+    <!-- Bouton poursuivre la recherche (pour revenir à la liste des DVDs) -->
     <Button
         android:id="@+id/btn_continue_browsing"
         android:layout_width="wrap_content"
