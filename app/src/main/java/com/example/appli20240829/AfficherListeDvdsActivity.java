@@ -51,7 +51,7 @@ public class AfficherListeDvdsActivity extends AppCompatActivity {
         String[] columns = new String[]{"_id", "title", "releaseYear", "disponibilite"};
         dvdCursor = new MatrixCursor(columns);
 
-        // Associer les colonnes aux éléments visuels du layout item (activité liste items dvds)
+        // Associer les colonnes aux éléments del'interface (activité liste items dvds)
         String[] from = new String[]{"title", "releaseYear", "disponibilite"};
         int[] to = new int[]{R.id.filmName, R.id.filmDate, R.id.filmDisponibilite};
 
@@ -61,7 +61,7 @@ public class AfficherListeDvdsActivity extends AppCompatActivity {
         // Initialisation de la ListView
         ListView listViewDvds = findViewById(R.id.listView);
         listViewDvds.setAdapter(adapter); // Liaison avec l’adapter
-        listViewDvds.setTextFilterEnabled(true); // Active le filtre texte (optionnel ici)
+        listViewDvds.setTextFilterEnabled(true); // Active le filtre texte
 
         // Gestion du clic sur un film de la liste
         listViewDvds.setOnItemClickListener((parent, view, position, id) -> {
@@ -92,33 +92,33 @@ public class AfficherListeDvdsActivity extends AppCompatActivity {
         new AppelerServiceRestGETDisponibilite().execute(com.btssio.applicationrftg.DonneesPartagees.getURLConnexion() + "/toad/inventory/stockFilm");
     }
 
-// Classe interne qui appelle le service REST pour récupérer la disponibilité des films
+// Classe interne qui appelle le service REST pour récupérer la disponibilité des films en arrière-plan (AsyncTask)
     private class AppelerServiceRestGETDisponibilite extends AsyncTask<String, Void, JSONArray> {
 
         @Override
-        protected JSONArray doInBackground(String... urls) {
-            String urlString = urls[0];
-            StringBuilder result = new StringBuilder();
+        protected JSONArray doInBackground(String... urls) { // Récupère la première URL passée en paramètre (adresse de l’API)
+            String urlString = urls[0]; //récupère l'url
+            StringBuilder result = new StringBuilder(); //pour stocker la réponse
 
             try {
                 // Connexion HTTP GET
-                URL url = new URL(urlString);
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                connection.setRequestMethod("GET");
+                URL url = new URL(urlString);// Crée un objet URL à partir de la chaîne de texte
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();//ouvre la connection HTTP à cette URL
+                connection.setRequestMethod("GET");  // Spécifie qu'on veut faire une requête de type GET
 
                 // Lire la réponse JSON ligne par ligne
                 BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
                 String line;
-                while ((line = reader.readLine()) != null) {
-                    result.append(line);
+                while ((line = reader.readLine()) != null) {  // Boucle pour lire la réponse ligne par ligne
+                    result.append(line); //ajoute chaque ligne au résultat final
                 }
                 reader.close();
 
-                // Convertir le résultat texte en tableau JSON
+                // Convertir le résultat texte en tableau JSON (retourne la réponse)
                 return new JSONArray(result.toString());
 
             } catch (Exception e) {
-                Log.e("API_DISPO", "Erreur de connexion ou de lecture : ", e);
+                Log.e("API_DISPO", "Erreur de connexion ou de lecture : ", e); // Si une erreur survient (connexion, lecture, JSON...), on l'affiche dans les logs
                 return null;
             }
         }
@@ -126,57 +126,57 @@ public class AfficherListeDvdsActivity extends AppCompatActivity {
     // Exécuté après la récupération des données
         @Override
         protected void onPostExecute(JSONArray filmsDispo) {
-            if (filmsDispo == null) {
-                Log.e("API_DISPO", "Erreur : données de disponibilité nulles");
+            if (filmsDispo == null) {   // Vérifie si la réponse est vide ou null
+                Log.e("API_DISPO", "Erreur : données de disponibilité nulles");  // Affiche une erreur dans les logs si les données sont nulles
                 return;
             }
 
             try {
-                // Parcours de chaque film pour lire le titre et le nombre dispo
+                // Parcours de chaque film pour lire le titre et le nombre dispo (tout les objets du tableau json)
                 for (int i = 0; i < filmsDispo.length(); i++) {
-                    JSONObject film = filmsDispo.getJSONObject(i);
-                    String title = film.getString("title");
-                    int filmsDisponibles = film.getInt("filmsDisponibles");
+                    JSONObject film = filmsDispo.getJSONObject(i);  // Récupère l'objet JSON du film à la position i
+                    String title = film.getString("title"); // Récupère le titre du film depuis l'objet JSON
+                    int filmsDisponibles = film.getInt("filmsDisponibles");   // Récupère le nombre de films disponibles
 
-                    // Si > 0 : disponible, sinon : indisponible
+                    // Si > 0 : affiche disponible, sinon : indisponible
                     String disponibilite = (filmsDisponibles > 0) ? "Disponible" : "Indisponible";
-                    disponibiliteMap.put(title, disponibilite);
+                    disponibiliteMap.put(title, disponibilite); // Ajoute dans la map le titre du film et sa disponibilité
                 }
 
                 // Une fois la disponibilité chargée, récupérer la liste des films
-                new AppelerServiceRestGETAfficherListeDvdsTask().execute("http://10.0.2.2:8080/toad/film/all");
+                new AppelerServiceRestGETAfficherListeDvdsTask().execute(com.btssio.applicationrftg.DonneesPartagees.getURLConnexion() + "/toad/film/all");
 
             } catch (JSONException e) {
-                Log.e("API_DISPO", "Erreur de parsing JSON disponibilité : ", e);
+                Log.e("API_DISPO", "Erreur de parsing JSON disponibilité : ", e);   // Si une erreur survient pendant la lecture du JSON, on l'affiche dans les logs
             }
         }
     }
 
-    // Classe interne qui appelle le service REST pour afficher la liste complète des DVDs
+    // Classe interne qui appelle le service REST pour afficher la liste complète des films
     private class AppelerServiceRestGETAfficherListeDvdsTask extends AsyncTask<String, Void, JSONArray> {
 
         //récupération des films
         @Override
-        protected JSONArray doInBackground(String... urls) {
+        protected JSONArray doInBackground(String... urls) { // Récupère la première URL passée en paramètre (celle de l'API)
             String urlString = urls[0];
-            StringBuilder result = new StringBuilder();
+            StringBuilder result = new StringBuilder(); // Variable pour stocker la réponse de l'API ligne par ligne
 
             try {
-                URL url = new URL(urlString);
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                connection.setRequestMethod("GET");
+                URL url = new URL(urlString); // Crée un objet URL à partir de l'adresse
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();  // Ouvre une connexion HTTP vers cette URL
+                connection.setRequestMethod("GET");  // Spécifie que la méthode de la requête est GET (lecture uniquement)
 
-                BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                String line;
-                while ((line = reader.readLine()) != null) {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream())); // Crée un lecteur pour lire la réponse ligne par ligne
+                String line; // Variable temporaire pour chaque ligne lue
+                while ((line = reader.readLine()) != null) { // Lit chaque ligne de la réponse et l'ajoute à la variable "result"
                     result.append(line);
                 }
                 reader.close();
 
-                return new JSONArray(result.toString());
+                return new JSONArray(result.toString()); // Transforme la chaîne de caractères en tableau JSON et la retourne
 
             } catch (Exception e) {
-                Log.e("API_FILMS", "Erreur de connexion ou de lecture : ", e);
+                Log.e("API_FILMS", "Erreur de connexion ou de lecture : ", e);  // En cas d'erreur (connexion ou parsing), on affiche un message dans les logs
                 return null;
             }
         }
