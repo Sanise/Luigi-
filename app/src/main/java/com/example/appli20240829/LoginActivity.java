@@ -118,20 +118,26 @@ public class LoginActivity extends AppCompatActivity implements AdapterView.OnIt
                         if (jsonObject.has("password") && jsonObject.getString("password").equals(password)) {
                             int userId = jsonObject.getInt("customerId");
                             // Si tout est bon → on affiche un message + on enregistre l’ID
+                            int age = jsonObject.getInt("age"); //  déclaration pour stocker  la valeur de l'age
                             runOnUiThread(() -> {
                                 Toast.makeText(LoginActivity.this, "Connexion réussie", Toast.LENGTH_SHORT).show();
 
-                                // Stockage de l’ID utilisateur dans les préférences partagées
+                                // Stockage de l’ID utilisateur dans les préférences partagées (récupérer de l'API)
                                 SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
                                 SharedPreferences.Editor editor = sharedPreferences.edit();
+                                //récupération des colonnes de customer
                                 editor.putInt("customerId", userId);
+                                editor.putInt("age", age);
                                 editor.apply();
 
-                                // REDIRIGE VERS LA LISTE DES FILMS
+                                // REDIRIGE VERS LA LISTE DES FILMS-
                                 Intent intent = new Intent(LoginActivity.this, AfficherListeDvdsActivity.class);
+                                //envoie des colonne vers afficherListeDvdsActivity
                                 intent.putExtra("USER_ID", userId);
+                                intent.putExtra("age", age); //envoie de l'age vers afficherListeDvdsActivity
                                 startActivity(intent);
                                 finish(); // Termine LoginActivity
+
                             });
                         } else {
                             // Mauvais mot de passe

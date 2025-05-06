@@ -1,7 +1,7 @@
 <resources>
         <string name="app_name">ApplicationRFTG</string>
         <string-array name="listeURLs">
-            <item>http://192.168.8.80:8180</item>
+            <item>http://rftg.mtb111.com</item>
             <item>http://10.0.2.2:8180</item>
         </string-array>
 </resources>

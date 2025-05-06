@@ -1,6 +1,7 @@
 package com.example.appli20240829;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.MatrixCursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -27,7 +28,7 @@ import java.util.Map;
 
 // Activité affichant la liste des films (DVDs)
 public class AfficherListeDvdsActivity extends AppCompatActivity {
-
+    private int age;
     private SimpleCursorAdapter adapter; // Adapter pour remplir la ListView avec les données des films
     private MatrixCursor dvdCursor; // Curseur temporaire contenant les films affichés
     private Map<String, String> disponibiliteMap = new HashMap<>(); // Map associant un titre à sa disponibilité
@@ -37,6 +38,9 @@ public class AfficherListeDvdsActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE); //récuperation de ce que contient l'API customer de LoginActivity
+        age = sharedPreferences.getInt("age", -1); // récuperer la colonne age depuis l'intent LoginActivity
+
         setContentView(R.layout.activity_afficherlistedvds); // Lie l’activité au layout XML
 
         // Initialisation du bouton "Panier"
@@ -143,14 +147,22 @@ public class AfficherListeDvdsActivity extends AppCompatActivity {
                     disponibiliteMap.put(title, disponibilite); // Ajoute dans la map le titre du film et sa disponibilité
                 }
 
-                // Une fois la disponibilité chargée, récupérer la liste des films
-                new AppelerServiceRestGETAfficherListeDvdsTask().execute(com.btssio.applicationrftg.DonneesPartagees.getURLConnexion() + "/toad/film/all");
-
+                String urlFilms;
+                if (age<=10) {
+                   urlFilms= com.btssio.applicationrftg.DonneesPartagees.getURLConnexion() + "/toad/film/films-enfants";
+                }
+                else {
+                    // Une fois la disponibilité chargée, récupérer la liste des films
+                    urlFilms= com.btssio.applicationrftg.DonneesPartagees.getURLConnexion() + "/toad/film/all";
+                }
+         //       Log.d("AFFICHAGE_FILMS", "URL appelée : " + urlFilms);
+                new AppelerServiceRestGETAfficherListeDvdsTask().execute(urlFilms);
             } catch (JSONException e) {
-                Log.e("API_DISPO", "Erreur de parsing JSON disponibilité : ", e);   // Si une erreur survient pendant la lecture du JSON, on l'affiche dans les logs
+        //        Log.e("API_DISPO", "Erreur de parsing JSON disponibilité : ", e);   // Si une erreur survient pendant la lecture du JSON, on l'affiche dans les logs
             }
         }
     }
+
 
     // Classe interne qui appelle le service REST pour afficher la liste complète des films
     private class AppelerServiceRestGETAfficherListeDvdsTask extends AsyncTask<String, Void, JSONArray> {
